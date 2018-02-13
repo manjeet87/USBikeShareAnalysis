@@ -74,9 +74,9 @@ tripdata2$Day = strftime(tripdata2$Start.Date, '%d')
 
 ```
 ```{r}
-ggplot(tripdata2,aes(x =as.Date(Start.Date), y = Duration/10)) +
+ggplot(tripdata2,aes(x =as.Date(Start.Date), y = Duration)) +
   scale_y_log10() + scale_x_date(date_labels = '%b', date_breaks = '1 month') +
-  geom_smooth( stat = 'summary', fun.y= mean) +
+  geom_smooth( stat = 'summary', fun.y= mean, span=0.3 ,aes(color = Subscription.Type)) +
   geom_smooth(color = 'brown')
 ```
 
@@ -98,22 +98,82 @@ head(weath_data)
 ```{r}
 weath_data2 = data.frame(weath_data)
 weath_data2$Date = as.Date(weath_data$Date, '%m/%d/%Y')
-ggplot(weath_data2, aes(x= Date)) + geom_line(aes(y = Min_TemperatureF)) +
+ggplot(weath_data2, aes(x= Date)) + 
+  geom_line(aes(y = Min_TemperatureF)) +
   geom_smooth(aes(y = Min_TemperatureF), color = 'blue', span = 0.2) +
   scale_x_date(date_labels = "%B", date_breaks = '1 month')
 ```
 ```{r}
 tripdata2$Duration.min = tripdata2$Duration/60.0
-ggplot(tripdata2, aes(x= Duration.min, width=5, fill = Subscription.Type)) + 
-  geom_bar( position = 'dodge',  color = 'Red') +
-  scale_y_continuous(breaks = seq(0,50000,5000)) +
-  scale_x_continuous(breaks = seq(0,5,50))+
-  xlim(0,50)#
-  coord_cartesian()
- # geom_smooth(aes(y = Precipitation_In), color = 'blue', span = 0.2) +
-  #scale_x_date(date_labels = "%B", date_breaks = '1 month')
+```
+```{r}
+setMinRange <- function(){
+  pos = 1
+  rangeArray = c()
+  for (ride in tripdata2$Duration){
+    i=0
+    ride = ride/60
+    while (i <=60){
+        if (ride >=i && ride < i+5){
+            rangeArray[pos] = paste(as.character(i),'-',as.character(i+5), sep = "")
+        }
+      i = i+ 5
+    }
+    
+    if(ride > 60){
+      rangeArray[pos]= paste('>',as.character(60), sep = "")
+    }
+    pos = pos +1
+  }
+  return(rangeArray)
+}
+
+setHrRange <- function(){
+  pos = 1
+  rangeArray = c()
+  for (ride in tripdata2$Duration.min){
+    i=0
+    ride = ride/60
+    while (i <= 16){
+        if (ride >=i && ride < i+1){
+            rangeArray[pos] = paste(as.character(i),'-',as.character(i+1), sep ="" )
+        }
+      i = i+ 1
+    }
+    
+    if(ride > 16){
+      rangeArray[pos]= paste('>',as.character(16), sep = "")
+    }
+    pos = pos +1
+  }
+  return(rangeArray)
+}
 ```
 
+```{r}
+tripdata2$duration.Minrange = setMinRange()
+tripdata2$duration.Minrange = factor(tripdata2$duration.Minrange, 
+levels = c('0-5','5-10','10-15','15-20','20-25','25-30','30-35','35-40','40-45','45-50','50-55','55-60','>60'))
+
+tripdata2$duration.HRrange = setHrRange()
+tripdata2$duration.HRrange = factor(tripdata2$duration.HRrange, 
+levels = c('1-2','2-3','3-4','4-5','5-6','6-7','7-8','8-9','9-10','10-11','11-12','12-13','13-14','14-15',
+           '15-16','>16'))
+
+```
+```{r}
+#tripdata2$Duration.min = tripdata2$Duration/60.0
+ggplot(tripdata2, aes(x= (duration.Minrange), fill = Subscription.Type)) + 
+  geom_bar() 
+  #scale_y_continuous(breaks = seq(0,50000,5000)) +
+  #scale_x_continuous(breaks = seq(0,5,50))+
+  #coord_cartesian()
+```
+```{r}
+ggplot(na.omit(tripdata2), aes(x= (duration.HRrange), fill = Subscription.Type)) + 
+  geom_bar() +
+  geom_smooth(aes())
+```
 
 # Ggplot2 library
 library(ggplot2)
